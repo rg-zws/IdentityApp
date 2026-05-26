@@ -1,0 +1,101 @@
+@{
+    ViewData["Title"] = "Dashboard";
+    var roles = ViewData["UserRoles"] as IList<string> ?? new List<string>();
+    var userName = ViewData["UserName"] as string ?? "User";
+    var memberSince = ViewData["MemberSince"] as string;
+}
+
+<div class="row mb-4">
+    <div class="col">
+        <h2>Welcome back, @userName!</h2>
+        <p class="text-muted">Member since @memberSince</p>
+    </div>
+    <div class="col-auto">
+        @foreach (var role in roles)
+        {
+            <span class="badge @(role == "Admin" ? "bg-danger" : "bg-primary") fs-6 me-1">@role</span>
+        }
+    </div>
+</div>
+
+<div class="row g-4">
+    <!-- Quick stats cards -->
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #0d6efd !important;">
+            <div class="card-body">
+                <h6 class="text-muted">Your Roles</h6>
+                <h3 class="mb-0">@roles.Count</h3>
+                <small class="text-muted">@string.Join(", ", roles)</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #198754 !important;">
+            <div class="card-body">
+                <h6 class="text-muted">Status</h6>
+                <h3 class="mb-0 text-success">Active</h3>
+                <small class="text-muted">Account in good standing</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #ffc107 !important;">
+            <div class="card-body">
+                <h6 class="text-muted">2FA</h6>
+                <h3 class="mb-0 text-warning">Off</h3>
+                <small class="text-muted">Two-factor auth disabled</small>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-3">
+        <div class="card border-0 shadow-sm h-100" style="border-left: 4px solid #0dcaf0 !important;">
+            <div class="card-body">
+                <h6 class="text-muted">Auth Method</h6>
+                <h3 class="mb-0">Cookie</h3>
+                <small class="text-muted">ASP.NET Identity cookie</small>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0">Quick Actions</h6></div>
+            <div class="list-group list-group-flush">
+                <a asp-controller="Account" asp-action="Profile"
+                   class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                    <span class="text-primary">&#9997;</span> Edit My Profile
+                </a>
+                @if (roles.Contains("Admin"))
+                {
+                    <a asp-controller="Home" asp-action="Admin"
+                       class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                        <span class="text-danger">&#9733;</span> Admin Panel
+                    </a>
+                }
+                <a asp-controller="Home" asp-action="Privacy"
+                   class="list-group-item list-group-item-action d-flex align-items-center gap-2">
+                    <span class="text-secondary">&#128274;</span> Privacy Policy
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="col-md-6">
+        <div class="card shadow-sm">
+            <div class="card-header"><h6 class="mb-0">What is ASP.NET Identity?</h6></div>
+            <div class="card-body small">
+                <p class="mb-2">ASP.NET Core Identity is a membership system that adds login/register functionality to your app. It handles:</p>
+                <ul class="mb-0">
+                    <li><strong>Users</strong> — stored in <code>AspNetUsers</code> table</li>
+                    <li><strong>Roles</strong> — stored in <code>AspNetRoles</code> table</li>
+                    <li><strong>Claims</strong> — key/value pairs attached to a user</li>
+                    <li><strong>Password hashing</strong> — PBKDF2 by default</li>
+                    <li><strong>Lockout</strong> — brute-force protection</li>
+                    <li><strong>Cookie auth</strong> — encrypted session cookie</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>

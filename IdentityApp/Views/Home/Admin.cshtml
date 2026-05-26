@@ -1,0 +1,65 @@
+@{
+    ViewData["Title"] = "Admin Panel";
+    var userRoleList = ViewData["UserRoleList"] as List<(IdentityApp.Models.ApplicationUser User, IList<string> Roles)>
+                       ?? new();
+}
+
+<div class="d-flex align-items-center mb-4">
+    <h2 class="me-3 mb-0">Admin Panel</h2>
+    <span class="badge bg-danger fs-6">Admin Only</span>
+</div>
+
+<div class="card shadow-sm">
+    <div class="card-header d-flex justify-content-between align-items-center">
+        <h6 class="mb-0">All Registered Users</h6>
+        <span class="badge bg-secondary">@userRoleList.Count total</span>
+    </div>
+    <div class="table-responsive">
+        <table class="table table-hover mb-0">
+            <thead class="table-light">
+                <tr>
+                    <th>Name</th>
+                    <th>Email</th>
+                    <th>Roles</th>
+                    <th>Lockout</th>
+                    <th>2FA</th>
+                    <th>Joined</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var (user, roles) in userRoleList)
+                {
+                    <tr>
+                        <td>@(user.FullName.Length > 0 ? user.FullName : "-")</td>
+                        <td><code>@user.Email</code></td>
+                        <td>
+                            @foreach (var r in roles)
+                            {
+                                <span class="badge @(r == "Admin" ? "bg-danger" : "bg-primary") me-1">@r</span>
+                            }
+                        </td>
+                        <td>
+                            @if (user.LockoutEnd.HasValue && user.LockoutEnd > DateTimeOffset.UtcNow)
+                            {
+                                <span class="badge bg-warning text-dark">Locked</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-success">OK</span>
+                            }
+                        </td>
+                        <td>@(user.TwoFactorEnabled ? "On" : "Off")</td>
+                        <td class="text-muted small">@user.CreatedAt.ToString("MMM dd, yyyy")</td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="alert alert-info mt-4">
+    <strong>Identity Tables in the database:</strong>
+    <code>AspNetUsers</code>, <code>AspNetRoles</code>, <code>AspNetUserRoles</code>,
+    <code>AspNetUserClaims</code>, <code>AspNetRoleClaims</code>,
+    <code>AspNetUserLogins</code>, <code>AspNetUserTokens</code>
+</div>

@@ -1,8 +1,85 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Home";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="text-center py-5">
+    <h1 class="display-4 fw-bold">ASP.NET Core Identity</h1>
+    <p class="lead text-muted">A complete membership system built into ASP.NET Core</p>
+
+    @if (User.Identity?.IsAuthenticated == true)
+    {
+        <a asp-controller="Home" asp-action="Dashboard" class="btn btn-primary btn-lg me-2">Go to Dashboard</a>
+    }
+    else
+    {
+        <a asp-controller="Account" asp-action="Register" class="btn btn-primary btn-lg me-2">Get Started</a>
+        <a asp-controller="Account" asp-action="Login" class="btn btn-outline-secondary btn-lg">Sign In</a>
+    }
+</div>
+
+<hr />
+
+<div class="row g-4 mt-2">
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-primary">User Management</h5>
+                <p class="card-text text-muted">
+                    Identity stores users in <code>AspNetUsers</code> with hashed passwords (PBKDF2),
+                    security stamps, email confirmation, and phone number support built-in.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-success">Role-Based Access</h5>
+                <p class="card-text text-muted">
+                    Assign roles like <code>Admin</code> or <code>User</code> and protect
+                    controller actions with <code>[Authorize(Roles = "Admin")]</code>.
+                    Try the Admin Panel to see this in action.
+                </p>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4">
+        <div class="card h-100 border-0 shadow-sm">
+            <div class="card-body">
+                <h5 class="card-title text-warning">Security Features</h5>
+                <p class="card-text text-muted">
+                    Account lockout, anti-forgery tokens on every form, sliding cookie expiry,
+                    and <code>returnUrl</code> redirection after login are all wired up.
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row g-4 mt-2">
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light"><strong>Key Classes</strong></div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><code>IdentityUser</code> — base user class (we extend it as <code>ApplicationUser</code>)</li>
+                <li class="list-group-item"><code>UserManager&lt;T&gt;</code> — create, find, update users; hash passwords</li>
+                <li class="list-group-item"><code>SignInManager&lt;T&gt;</code> — cookie sign-in / sign-out / lockout</li>
+                <li class="list-group-item"><code>RoleManager&lt;T&gt;</code> — create and assign roles</li>
+                <li class="list-group-item"><code>IdentityDbContext</code> — EF Core context with all Identity tables</li>
+            </ul>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card border-0 shadow-sm">
+            <div class="card-header bg-light"><strong>Database Tables Created</strong></div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item"><code>AspNetUsers</code> — all user accounts</li>
+                <li class="list-group-item"><code>AspNetRoles</code> — role definitions</li>
+                <li class="list-group-item"><code>AspNetUserRoles</code> — user ↔ role mapping</li>
+                <li class="list-group-item"><code>AspNetUserClaims</code> — claims attached to users</li>
+                <li class="list-group-item"><code>AspNetUserLogins</code> — external logins (Google, etc.)</li>
+                <li class="list-group-item"><code>AspNetUserTokens</code> — tokens (password reset, etc.)</li>
+            </ul>
+        </div>
+    </div>
 </div>

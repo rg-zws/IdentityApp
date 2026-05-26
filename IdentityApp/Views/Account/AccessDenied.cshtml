@@ -1,0 +1,16 @@
+@{
+    ViewData["Title"] = "Access Denied";
+}
+
+<div class="row justify-content-center">
+    <div class="col-md-6 text-center py-5">
+        <div class="display-1 text-danger mb-3">403</div>
+        <h2 class="mb-3">Access Denied</h2>
+        <p class="text-muted mb-4">
+            You do not have permission to view this page.
+            This area requires elevated privileges (e.g., the <strong>Admin</strong> role).
+        </p>
+        <a asp-controller="Home" asp-action="Dashboard" class="btn btn-primary me-2">Go to Dashboard</a>
+        <a asp-controller="Home" asp-action="Index" class="btn btn-outline-secondary">Go Home</a>
+    </div>
+</div>
