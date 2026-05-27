@@ -168,6 +168,146 @@ namespace IdentityApp.Controllers
             return View(model);
         }
 
+        // -------------------------------------------------------
+        // FORGOT PASSWORD
+        // -------------------------------------------------------
+
+        // GET /Account/ForgotPassword
+        [HttpGet]
+        public IActionResult ForgotPassword()
+        {
+            if (_signInManager.IsSignedIn(User))
+                return RedirectToAction("Dashboard", "Home");
+            return View();
+        }
+
+        // POST /Account/ForgotPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ForgotPassword(ForgotPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+
+            // Always show the same page whether user exists or not (security best practice)
+            // This prevents user enumeration (attacker can't tell if email is registered)
+            if (user == null)
+                return RedirectToAction(nameof(ForgotPasswordConfirmation));
+
+            // Generate a secure one-time token using Identity's built-in token provider
+            var token = await _userManager.GeneratePasswordResetTokenAsync(user);
+
+            // Build the reset link
+            var resetLink = Url.Action(
+                action: nameof(ResetPassword),
+                controller: "Account",
+                values: new { token, email = user.Email },
+                protocol: Request.Scheme)!;
+
+            // In production → send this link via email (SendGrid, SMTP, etc.)
+            // For learning → we pass it directly to the confirmation page
+            TempData["ResetLink"] = resetLink;
+
+            return RedirectToAction(nameof(ForgotPasswordConfirmation));
+        }
+
+        // GET /Account/ForgotPasswordConfirmation
+        [HttpGet]
+        public IActionResult ForgotPasswordConfirmation()
+        {
+            return View();
+        }
+
+        // -------------------------------------------------------
+        // RESET PASSWORD  (arrived from the email link)
+        // -------------------------------------------------------
+
+        // GET /Account/ResetPassword?token=...&email=...
+        [HttpGet]
+        public IActionResult ResetPassword(string? token, string? email)
+        {
+            if (token == null || email == null)
+                return BadRequest("Invalid password reset link.");
+
+            var model = new ResetPasswordViewModel { Token = token, Email = email };
+            return View(model);
+        }
+
+        // POST /Account/ResetPassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> ResetPassword(ResetPasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.FindByEmailAsync(model.Email);
+            if (user == null)
+                return RedirectToAction(nameof(ResetPasswordConfirmation)); // same page (no enumeration)
+
+            // Identity validates the token and sets the new password
+            var result = await _userManager.ResetPasswordAsync(user, model.Token, model.NewPassword);
+
+            if (result.Succeeded)
+                return RedirectToAction(nameof(ResetPasswordConfirmation));
+
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+
+            return View(model);
+        }
+
+        // GET /Account/ResetPasswordConfirmation
+        [HttpGet]
+        public IActionResult ResetPasswordConfirmation()
+        {
+            return View();
+        }
+
+        // -------------------------------------------------------
+        // CHANGE PASSWORD  (requires login)
+        // -------------------------------------------------------
+
+        // GET /Account/ChangePassword
+        [HttpGet]
+        [Authorize]
+        public IActionResult ChangePassword()
+        {
+            return View();
+        }
+
+        // POST /Account/ChangePassword
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        [Authorize]
+        public async Task<IActionResult> ChangePassword(ChangePasswordViewModel model)
+        {
+            if (!ModelState.IsValid)
+                return View(model);
+
+            var user = await _userManager.GetUserAsync(User);
+            if (user == null) return NotFound();
+
+            // Identity checks current password before changing
+            var result = await _userManager.ChangePasswordAsync(
+                user, model.CurrentPassword, model.NewPassword);
+
+            if (result.Succeeded)
+            {
+                // Refresh the login cookie so user stays signed in after password change
+                await _signInManager.RefreshSignInAsync(user);
+                TempData["Success"] = "Password changed successfully.";
+                return RedirectToAction(nameof(Profile));
+            }
+
+            foreach (var error in result.Errors)
+                ModelState.AddModelError(string.Empty, error.Description);
+
+            return View(model);
+        }
+
         // GET /Account/AccessDenied
         [HttpGet]
         public IActionResult AccessDenied()

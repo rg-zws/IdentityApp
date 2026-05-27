@@ -57,6 +57,8 @@ namespace IdentityApp.Controllers
             return View();
         }
 
+        public IActionResult JwtDemo() => View();
+
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {

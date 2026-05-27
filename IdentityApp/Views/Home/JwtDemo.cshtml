@@ -1,0 +1,174 @@
+@{
+    ViewData["Title"] = "JWT Demo";
+}
+
+<h2 class="mb-1">JWT Token Demo</h2>
+<p class="text-muted mb-4">This page calls the REST API using JWT — no cookies involved.</p>
+
+<div class="row g-4">
+    <!-- Step 1: Login to get token -->
+    <div class="col-md-5">
+        <div class="card shadow-sm">
+            <div class="card-header bg-success text-white">
+                <strong>Step 1 — Login &amp; Get Token</strong>
+            </div>
+            <div class="card-body">
+                <div class="mb-2">
+                    <label class="form-label">Email</label>
+                    <input id="email" class="form-control" value="admin@identityapp.com" />
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Password</label>
+                    <input id="password" type="password" class="form-control" value="Admin@123" />
+                </div>
+                <button class="btn btn-success w-100" onclick="loginJwt()">POST /api/authapi/login</button>
+            </div>
+        </div>
+
+        <div class="card shadow-sm mt-3">
+            <div class="card-header bg-primary text-white">
+                <strong>Step 2 — Call Protected API</strong>
+            </div>
+            <div class="card-body d-grid gap-2">
+                <button class="btn btn-primary" onclick="callApi('/api/authapi/profile')">
+                    GET /api/authapi/profile
+                </button>
+                <button class="btn btn-danger" onclick="callApi('/api/authapi/admin-only')">
+                    GET /api/authapi/admin-only (Admin role)
+                </button>
+                <button class="btn btn-outline-secondary" onclick="clearToken()">
+                    Clear Token (simulate logout)
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Token display + response -->
+    <div class="col-md-7">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header d-flex justify-content-between">
+                <strong>JWT Token</strong>
+                <span id="tokenStatus" class="badge bg-secondary">No token</span>
+            </div>
+            <div class="card-body">
+                <textarea id="tokenBox" class="form-control font-monospace" rows="4"
+                          placeholder="Token will appear here after login..." readonly></textarea>
+                <div id="tokenInfo" class="mt-2 small text-muted"></div>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header"><strong>API Response</strong></div>
+            <div class="card-body">
+                <pre id="responseBox" class="bg-light p-3 rounded small"
+                     style="min-height:120px;">Response will appear here...</pre>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="card border-0 shadow-sm mt-4">
+    <div class="card-header bg-light"><strong>How JWT differs from Cookie auth</strong></div>
+    <div class="card-body">
+        <div class="row">
+            <div class="col-md-6">
+                <h6 class="text-success">Cookie (our MVC pages)</h6>
+                <ul class="small">
+                    <li>Browser sends cookie automatically</li>
+                    <li>Server reads encrypted cookie</li>
+                    <li>Works for web pages only</li>
+                    <li>Logout = server deletes session</li>
+                </ul>
+            </div>
+            <div class="col-md-6">
+                <h6 class="text-primary">JWT (this demo)</h6>
+                <ul class="small">
+                    <li>Client must send <code>Authorization: Bearer &lt;token&gt;</code></li>
+                    <li>Server validates signature — no DB lookup</li>
+                    <li>Works for APIs, mobile, other servers</li>
+                    <li>Logout = client discards token (server can't revoke)</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    let jwtToken = null;
+
+    async function loginJwt() {
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        setResponse('Calling POST /api/authapi/login ...');
+
+        try {
+            const res = await fetch('/api/authapi/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email, password, rememberMe: false })
+            });
+            const data = await res.json();
+
+            if (res.ok) {
+                jwtToken = data.token;
+                document.getElementById('tokenBox').value = jwtToken;
+                document.getElementById('tokenStatus').textContent = 'Token received ✅';
+                document.getElementById('tokenStatus').className = 'badge bg-success';
+
+                // Decode payload (middle part) — just base64, not a security check
+                const payload = JSON.parse(atob(jwtToken.split('.')[1]));
+                const expDate = new Date(payload.exp * 1000).toLocaleTimeString();
+                document.getElementById('tokenInfo').innerHTML =
+                    `Expires at: <strong>${expDate}</strong> &nbsp;|&nbsp;
+                     User: <strong>${payload.email}</strong> &nbsp;|&nbsp;
+                     Role: <strong>${payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? 'User'}</strong>`;
+
+                setResponse(data);
+            } else {
+                setResponse(data);
+                document.getElementById('tokenStatus').textContent = 'Login failed ❌';
+                document.getElementById('tokenStatus').className = 'badge bg-danger';
+            }
+        } catch (e) {
+            setResponse({ error: e.message });
+        }
+    }
+
+    async function callApi(url) {
+        if (!jwtToken) {
+            setResponse({ error: 'No token! Login first.' });
+            return;
+        }
+        setResponse(`Calling ${url} ...`);
+        try {
+            const res = await fetch(url, {
+                headers: {
+                    'Authorization': `Bearer ${jwtToken}`   // ← this is how JWT is sent
+                }
+            });
+
+            // Safely parse — body might be empty on 401/403
+            const text = await res.text();
+            const data = text ? JSON.parse(text) : { status: res.status, message: res.statusText };
+            setResponse({ httpStatus: res.status, ...data });
+        } catch (e) {
+            setResponse({ error: e.message });
+        }
+    }
+
+    function clearToken() {
+        jwtToken = null;
+        document.getElementById('tokenBox').value = '';
+        document.getElementById('tokenInfo').innerHTML = '';
+        document.getElementById('tokenStatus').textContent = 'No token';
+        document.getElementById('tokenStatus').className = 'badge bg-secondary';
+        setResponse('Token cleared. You are now "logged out" from the API perspective.');
+    }
+
+    function setResponse(data) {
+        document.getElementById('responseBox').textContent =
+            typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+    }
+</script>
+}
