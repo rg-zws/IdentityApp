@@ -87,6 +87,38 @@ builder.Services.AddAuthentication()
     });
 
 builder.Services.AddScoped<IdentityApp.Services.JwtService>();
+
+// ── POLICY-BASED AUTHORIZATION ───────────────────────────────────────────────
+// Policies are named rules. Much more powerful than just [Authorize(Roles=...)]
+builder.Services.AddAuthorization(options =>
+{
+    // Policy 1: Simple role check (same as [Authorize(Roles="Admin")])
+    options.AddPolicy("AdminOnly",
+        policy => policy.RequireRole("Admin"));
+
+    // Policy 2: Claim check — user must have Department = Engineering
+    options.AddPolicy("EngineeringOnly",
+        policy => policy.RequireClaim("Department", "Engineering"));
+
+    // Policy 3: Claim check — user must be from India
+    options.AddPolicy("IndiaOnly",
+        policy => policy.RequireClaim("Country", "India"));
+
+    // Policy 4: Multiple rules — must be Admin AND from India
+    options.AddPolicy("IndianAdmin", policy =>
+    {
+        policy.RequireRole("Admin");
+        policy.RequireClaim("Country", "India");
+    });
+
+    // Policy 5: Custom logic using RequireAssertion — any C# expression
+    options.AddPolicy("EngineeringOrAdmin", policy =>
+        policy.RequireAssertion(context =>
+            context.User.IsInRole("Admin") ||
+            context.User.HasClaim("Department", "Engineering")));
+});
+// ─────────────────────────────────────────────────────────────────────────────
+
 builder.Services.AddControllersWithViews();
 
 var app = builder.Build();

@@ -30,5 +30,11 @@ namespace IdentityApp.Models.ViewModels
 
         [Display(Name = "Bio (optional)")]
         public string? ProfileBio { get; set; }
+
+        [Display(Name = "Department")]
+        public string? Department { get; set; }
+
+        [Display(Name = "Country")]
+        public string? Country { get; set; }
     }
 }

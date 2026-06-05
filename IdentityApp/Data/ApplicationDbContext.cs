@@ -10,5 +10,8 @@ namespace IdentityApp.Data
             : base(options)
         {
         }
+
+        // Refresh tokens table for JWT
+        public DbSet<RefreshToken> RefreshTokens { get; set; }
     }
 }

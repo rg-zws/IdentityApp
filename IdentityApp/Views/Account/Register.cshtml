@@ -49,6 +49,33 @@
                         <textarea asp-for="ProfileBio" class="form-control" rows="2" placeholder="Tell us a bit about yourself..."></textarea>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Department" class="form-label fw-semibold">
+                                Department <span class="text-muted fw-normal small">(becomes a Claim)</span>
+                            </label>
+                            <select asp-for="Department" class="form-select">
+                                <option value="">-- Select --</option>
+                                <option>Engineering</option>
+                                <option>Marketing</option>
+                                <option>Finance</option>
+                                <option>HR</option>
+                            </select>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Country" class="form-label fw-semibold">
+                                Country <span class="text-muted fw-normal small">(becomes a Claim)</span>
+                            </label>
+                            <select asp-for="Country" class="form-select">
+                                <option value="">-- Select --</option>
+                                <option>India</option>
+                                <option>USA</option>
+                                <option>UK</option>
+                                <option>Canada</option>
+                            </select>
+                        </div>
+                    </div>
+
                     <div class="d-grid">
                         <button type="submit" class="btn btn-primary btn-lg">Create Account</button>
                     </div>

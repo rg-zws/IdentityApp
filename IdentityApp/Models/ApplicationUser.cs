@@ -8,6 +8,8 @@ namespace IdentityApp.Models
         public string FirstName { get; set; } = string.Empty;
         public string LastName { get; set; } = string.Empty;
         public string? ProfileBio { get; set; }
+        public string? Department { get; set; }   // used to demonstrate Claims
+        public string? Country { get; set; }       // used to demonstrate Claims
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
         public string FullName => $"{FirstName} {LastName}".Trim();

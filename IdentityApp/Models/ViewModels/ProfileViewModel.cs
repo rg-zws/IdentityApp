@@ -19,6 +19,12 @@ namespace IdentityApp.Models.ViewModels
         [Display(Name = "Phone Number")]
         public string? PhoneNumber { get; set; }
 
+        [Display(Name = "Department")]
+        public string? Department { get; set; }
+
+        [Display(Name = "Country")]
+        public string? Country { get; set; }
+
         public string? Email { get; set; }
         public DateTime CreatedAt { get; set; }
     }

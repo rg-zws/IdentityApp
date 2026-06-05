@@ -51,6 +51,37 @@
                         <textarea asp-for="ProfileBio" class="form-control" rows="3"></textarea>
                     </div>
 
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Department" class="form-label fw-semibold">
+                                Department
+                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;">Claim</span>
+                            </label>
+                            <select asp-for="Department" class="form-select">
+                                <option value="">-- None --</option>
+                                <option>Engineering</option>
+                                <option>Marketing</option>
+                                <option>Finance</option>
+                                <option>HR</option>
+                            </select>
+                            <div class="form-text">Saved as a Claim in AspNetUserClaims</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label asp-for="Country" class="form-label fw-semibold">
+                                Country
+                                <span class="badge bg-info text-dark ms-1" style="font-size:0.7rem;">Claim</span>
+                            </label>
+                            <select asp-for="Country" class="form-select">
+                                <option value="">-- None --</option>
+                                <option>India</option>
+                                <option>USA</option>
+                                <option>UK</option>
+                                <option>Canada</option>
+                            </select>
+                            <div class="form-text">Saved as a Claim in AspNetUserClaims</div>
+                        </div>
+                    </div>
+
                     <button type="submit" class="btn btn-primary">Save Changes</button>
                     <a asp-controller="Home" asp-action="Dashboard" class="btn btn-outline-secondary">Cancel</a>
                 </form>

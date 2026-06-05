@@ -3,6 +3,7 @@ using IdentityApp.Models.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace IdentityApp.Controllers
 {
@@ -44,6 +45,8 @@ namespace IdentityApp.Controllers
                 FirstName = model.FirstName,
                 LastName = model.LastName,
                 ProfileBio = model.ProfileBio,
+                Department = model.Department,
+                Country = model.Country,
                 CreatedAt = DateTime.UtcNow
             };
 
@@ -53,6 +56,19 @@ namespace IdentityApp.Controllers
             {
                 // Assign default "User" role
                 await _userManager.AddToRoleAsync(user, "User");
+
+                // ── CLAIMS ──────────────────────────────────────────────────
+                // Store Department and Country as Claims in AspNetUserClaims
+                // These will be packed into the cookie/token on every login
+                var claims = new List<Claim>();
+                if (!string.IsNullOrEmpty(model.Department))
+                    claims.Add(new Claim("Department", model.Department));
+                if (!string.IsNullOrEmpty(model.Country))
+                    claims.Add(new Claim("Country", model.Country));
+                if (claims.Count > 0)
+                    await _userManager.AddClaimsAsync(user, claims);
+                // ────────────────────────────────────────────────────────────
+
                 await _signInManager.SignInAsync(user, isPersistent: false);
                 TempData["Success"] = $"Welcome, {user.FirstName}! Your account has been created.";
                 return RedirectToAction("Dashboard", "Home");
@@ -131,6 +147,8 @@ namespace IdentityApp.Controllers
                 LastName = user.LastName,
                 ProfileBio = user.ProfileBio,
                 PhoneNumber = user.PhoneNumber,
+                Department = user.Department,
+                Country = user.Country,
                 Email = user.Email,
                 CreatedAt = user.CreatedAt
             };
@@ -153,12 +171,26 @@ namespace IdentityApp.Controllers
             user.LastName = model.LastName;
             user.ProfileBio = model.ProfileBio;
             user.PhoneNumber = model.PhoneNumber;
+            user.Department = model.Department;
+            user.Country = model.Country;
 
             var result = await _userManager.UpdateAsync(user);
 
             if (result.Succeeded)
             {
-                TempData["Success"] = "Profile updated successfully.";
+                // ── Sync Claims ──────────────────────────────────────────────
+                // When Department or Country changes, we must:
+                //   1. Remove the OLD claim from AspNetUserClaims
+                //   2. Add the NEW claim to AspNetUserClaims
+                //   3. Refresh the login cookie so new claim is active immediately
+                await SyncClaimAsync(user, "Department", model.Department);
+                await SyncClaimAsync(user, "Country", model.Country);
+
+                // Re-issue the cookie with updated claims — no need to logout/login
+                await _signInManager.RefreshSignInAsync(user);
+                // ────────────────────────────────────────────────────────────
+
+                TempData["Success"] = "Profile updated successfully. Claims refreshed.";
                 return RedirectToAction(nameof(Profile));
             }
 
@@ -314,5 +346,21 @@ namespace IdentityApp.Controllers
         {
             return View();
         }
+
+        // ── Helper: keep AspNetUserClaims in sync with user property ─────────
+        // Removes old claim value and adds new one in AspNetUserClaims table
+        private async Task SyncClaimAsync(ApplicationUser user, string claimType, string? newValue)
+        {
+            // Get existing claim of this type from DB
+            var existingClaims = await _userManager.GetClaimsAsync(user);
+            var oldClaim = existingClaims.FirstOrDefault(c => c.Type == claimType);
+
+            if (oldClaim != null)
+                await _userManager.RemoveClaimAsync(user, oldClaim); // remove old
+
+            if (!string.IsNullOrEmpty(newValue))
+                await _userManager.AddClaimAsync(user, new Claim(claimType, newValue)); // add new
+        }
+        // ─────────────────────────────────────────────────────────────────────
     }
 }

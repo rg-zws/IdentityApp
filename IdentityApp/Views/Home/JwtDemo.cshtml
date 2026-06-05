@@ -1,93 +1,123 @@
 @{
-    ViewData["Title"] = "JWT Demo";
+    ViewData["Title"] = "JWT + Refresh Token Demo";
 }
 
-<h2 class="mb-1">JWT Token Demo</h2>
-<p class="text-muted mb-4">This page calls the REST API using JWT — no cookies involved.</p>
+<h2 class="mb-1">JWT + Refresh Token Demo</h2>
+<p class="text-muted mb-4">See Access Token + Refresh Token flow live.</p>
 
-<div class="row g-4">
-    <!-- Step 1: Login to get token -->
-    <div class="col-md-5">
-        <div class="card shadow-sm">
-            <div class="card-header bg-success text-white">
-                <strong>Step 1 — Login &amp; Get Token</strong>
-            </div>
+<div class="row g-3">
+    <!-- Left: controls -->
+    <div class="col-md-4">
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-success text-white"><strong>Step 1 — Login</strong></div>
             <div class="card-body">
                 <div class="mb-2">
-                    <label class="form-label">Email</label>
-                    <input id="email" class="form-control" value="admin@identityapp.com" />
+                    <label class="form-label small fw-semibold">Email</label>
+                    <input id="email" class="form-control form-control-sm" value="admin@identityapp.com" />
                 </div>
                 <div class="mb-3">
-                    <label class="form-label">Password</label>
-                    <input id="password" type="password" class="form-control" value="Admin@123" />
+                    <label class="form-label small fw-semibold">Password</label>
+                    <input id="password" type="password" class="form-control form-control-sm" value="Admin@123" />
                 </div>
-                <button class="btn btn-success w-100" onclick="loginJwt()">POST /api/authapi/login</button>
+                <button class="btn btn-success w-100 btn-sm" onclick="loginJwt()">
+                    POST /api/authapi/login
+                </button>
             </div>
         </div>
 
-        <div class="card shadow-sm mt-3">
-            <div class="card-header bg-primary text-white">
-                <strong>Step 2 — Call Protected API</strong>
-            </div>
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-primary text-white"><strong>Step 2 — Call API</strong></div>
             <div class="card-body d-grid gap-2">
-                <button class="btn btn-primary" onclick="callApi('/api/authapi/profile')">
-                    GET /api/authapi/profile
+                <button class="btn btn-primary btn-sm" onclick="callApi('/api/authapi/profile')">
+                    GET /profile
                 </button>
-                <button class="btn btn-danger" onclick="callApi('/api/authapi/admin-only')">
-                    GET /api/authapi/admin-only (Admin role)
+                <button class="btn btn-danger btn-sm" onclick="callApi('/api/authapi/admin-only')">
+                    GET /admin-only
                 </button>
-                <button class="btn btn-outline-secondary" onclick="clearToken()">
-                    Clear Token (simulate logout)
+            </div>
+        </div>
+
+        <div class="card shadow-sm mb-3">
+            <div class="card-header bg-warning text-dark"><strong>Step 3 — Refresh Token</strong></div>
+            <div class="card-body d-grid gap-2">
+                <button class="btn btn-warning btn-sm" onclick="refreshTokens()">
+                    POST /api/authapi/refresh
                 </button>
+                <small class="text-muted">
+                    Simulates: access token expired → get new one using refresh token (no re-login)
+                </small>
+            </div>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-header bg-dark text-white"><strong>Step 4 — Logout (Revoke)</strong></div>
+            <div class="card-body d-grid gap-2">
+                <button class="btn btn-dark btn-sm" onclick="revokeToken()">
+                    POST /api/authapi/revoke
+                </button>
+                <button class="btn btn-outline-secondary btn-sm" onclick="clearAll()">
+                    Clear all (client only)
+                </button>
+                <small class="text-muted">
+                    Revoke marks the refresh token as invalid in DB
+                </small>
             </div>
         </div>
     </div>
 
-    <!-- Token display + response -->
-    <div class="col-md-7">
-        <div class="card shadow-sm mb-3">
-            <div class="card-header d-flex justify-content-between">
-                <strong>JWT Token</strong>
-                <span id="tokenStatus" class="badge bg-secondary">No token</span>
+    <!-- Right: tokens + response -->
+    <div class="col-md-8">
+        <div class="row g-3 mb-3">
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong class="small">Access Token (JWT)</strong>
+                        <span id="accessStatus" class="badge bg-secondary">None</span>
+                    </div>
+                    <div class="card-body p-2">
+                        <textarea id="accessTokenBox" class="form-control form-control-sm font-monospace"
+                                  rows="4" placeholder="Short-lived JWT..." readonly></textarea>
+                        <div id="accessInfo" class="mt-1 small text-muted"></div>
+                    </div>
+                </div>
             </div>
-            <div class="card-body">
-                <textarea id="tokenBox" class="form-control font-monospace" rows="4"
-                          placeholder="Token will appear here after login..." readonly></textarea>
-                <div id="tokenInfo" class="mt-2 small text-muted"></div>
+            <div class="col-md-6">
+                <div class="card shadow-sm h-100">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <strong class="small">Refresh Token</strong>
+                        <span id="refreshStatus" class="badge bg-secondary">None</span>
+                    </div>
+                    <div class="card-body p-2">
+                        <textarea id="refreshTokenBox" class="form-control form-control-sm font-monospace"
+                                  rows="4" placeholder="Long-lived random string..." readonly></textarea>
+                        <div id="refreshInfo" class="mt-1 small text-muted"></div>
+                    </div>
+                </div>
             </div>
         </div>
 
         <div class="card shadow-sm">
             <div class="card-header"><strong>API Response</strong></div>
-            <div class="card-body">
-                <pre id="responseBox" class="bg-light p-3 rounded small"
-                     style="min-height:120px;">Response will appear here...</pre>
+            <div class="card-body p-2">
+                <pre id="responseBox" class="bg-light p-3 rounded small mb-0"
+                     style="min-height:120px; max-height:250px; overflow-y:auto;">Response will appear here...</pre>
             </div>
         </div>
-    </div>
-</div>
 
-<div class="card border-0 shadow-sm mt-4">
-    <div class="card-header bg-light"><strong>How JWT differs from Cookie auth</strong></div>
-    <div class="card-body">
-        <div class="row">
-            <div class="col-md-6">
-                <h6 class="text-success">Cookie (our MVC pages)</h6>
-                <ul class="small">
-                    <li>Browser sends cookie automatically</li>
-                    <li>Server reads encrypted cookie</li>
-                    <li>Works for web pages only</li>
-                    <li>Logout = server deletes session</li>
-                </ul>
-            </div>
-            <div class="col-md-6">
-                <h6 class="text-primary">JWT (this demo)</h6>
-                <ul class="small">
-                    <li>Client must send <code>Authorization: Bearer &lt;token&gt;</code></li>
-                    <li>Server validates signature — no DB lookup</li>
-                    <li>Works for APIs, mobile, other servers</li>
-                    <li>Logout = client discards token (server can't revoke)</li>
-                </ul>
+        <div class="card border-0 shadow-sm mt-3">
+            <div class="card-header bg-light"><strong>Refresh Token Flow — How it works</strong></div>
+            <div class="card-body small">
+                <div class="d-flex gap-2 flex-wrap">
+                    <span class="badge bg-success p-2">1. Login → get AccessToken (10min) + RefreshToken (7days)</span>
+                    <span class="text-muted">→</span>
+                    <span class="badge bg-primary p-2">2. Use AccessToken for all API calls</span>
+                    <span class="text-muted">→</span>
+                    <span class="badge bg-danger p-2">3. AccessToken expires → 401</span>
+                    <span class="text-muted">→</span>
+                    <span class="badge bg-warning text-dark p-2">4. Send RefreshToken → get NEW AccessToken</span>
+                    <span class="text-muted">→</span>
+                    <span class="badge bg-dark p-2">5. Logout → revoke RefreshToken in DB</span>
+                </div>
             </div>
         </div>
     </div>
@@ -95,75 +125,117 @@
 
 @section Scripts {
 <script>
-    let jwtToken = null;
+    let accessToken = null;
+    let refreshToken = null;
 
     async function loginJwt() {
         const email = document.getElementById('email').value;
         const password = document.getElementById('password').value;
         setResponse('Calling POST /api/authapi/login ...');
 
-        try {
-            const res = await fetch('/api/authapi/login', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email, password, rememberMe: false })
-            });
-            const data = await res.json();
+        const res = await fetch('/api/authapi/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email, password, rememberMe: false })
+        });
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
 
-            if (res.ok) {
-                jwtToken = data.token;
-                document.getElementById('tokenBox').value = jwtToken;
-                document.getElementById('tokenStatus').textContent = 'Token received ✅';
-                document.getElementById('tokenStatus').className = 'badge bg-success';
+        if (res.ok) {
+            accessToken = data.accessToken;
+            refreshToken = data.refreshToken;
 
-                // Decode payload (middle part) — just base64, not a security check
-                const payload = JSON.parse(atob(jwtToken.split('.')[1]));
-                const expDate = new Date(payload.exp * 1000).toLocaleTimeString();
-                document.getElementById('tokenInfo').innerHTML =
-                    `Expires at: <strong>${expDate}</strong> &nbsp;|&nbsp;
-                     User: <strong>${payload.email}</strong> &nbsp;|&nbsp;
-                     Role: <strong>${payload['http://schemas.microsoft.com/ws/2008/06/identity/claims/role'] ?? 'User'}</strong>`;
+            document.getElementById('accessTokenBox').value = accessToken;
+            document.getElementById('refreshTokenBox').value = refreshToken;
 
-                setResponse(data);
-            } else {
-                setResponse(data);
-                document.getElementById('tokenStatus').textContent = 'Login failed ❌';
-                document.getElementById('tokenStatus').className = 'badge bg-danger';
-            }
-        } catch (e) {
-            setResponse({ error: e.message });
+            // Decode JWT payload
+            const payload = JSON.parse(atob(accessToken.split('.')[1]));
+            const expTime = new Date(payload.exp * 1000).toLocaleTimeString();
+
+            document.getElementById('accessStatus').textContent = 'Active ✅';
+            document.getElementById('accessStatus').className = 'badge bg-success';
+            document.getElementById('accessInfo').textContent = `Expires: ${expTime}`;
+
+            document.getElementById('refreshStatus').textContent = 'Active ✅';
+            document.getElementById('refreshStatus').className = 'badge bg-success';
+            document.getElementById('refreshInfo').textContent =
+                `Expires: ${new Date(data.refreshTokenExpiry).toLocaleDateString()}`;
         }
+        setResponse({ httpStatus: res.status, ...data });
     }
 
     async function callApi(url) {
-        if (!jwtToken) {
-            setResponse({ error: 'No token! Login first.' });
-            return;
-        }
+        if (!accessToken) { setResponse({ error: 'Login first to get an access token.' }); return; }
         setResponse(`Calling ${url} ...`);
-        try {
-            const res = await fetch(url, {
-                headers: {
-                    'Authorization': `Bearer ${jwtToken}`   // ← this is how JWT is sent
-                }
-            });
-
-            // Safely parse — body might be empty on 401/403
-            const text = await res.text();
-            const data = text ? JSON.parse(text) : { status: res.status, message: res.statusText };
-            setResponse({ httpStatus: res.status, ...data });
-        } catch (e) {
-            setResponse({ error: e.message });
-        }
+        const res = await fetch(url, {
+            headers: { 'Authorization': `Bearer ${accessToken}` }
+        });
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : { status: res.status };
+        setResponse({ httpStatus: res.status, ...data });
     }
 
-    function clearToken() {
-        jwtToken = null;
-        document.getElementById('tokenBox').value = '';
-        document.getElementById('tokenInfo').innerHTML = '';
-        document.getElementById('tokenStatus').textContent = 'No token';
-        document.getElementById('tokenStatus').className = 'badge bg-secondary';
-        setResponse('Token cleared. You are now "logged out" from the API perspective.');
+    async function refreshTokens() {
+        if (!refreshToken) { setResponse({ error: 'Login first to get a refresh token.' }); return; }
+        setResponse('Calling POST /api/authapi/refresh ...');
+
+        const res = await fetch('/api/authapi/refresh', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refreshToken })
+        });
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+
+        if (res.ok) {
+            // OLD tokens replaced — this is Token Rotation
+            accessToken = data.accessToken;
+            refreshToken = data.refreshToken;
+
+            document.getElementById('accessTokenBox').value = accessToken;
+            document.getElementById('refreshTokenBox').value = refreshToken;
+
+            const payload = JSON.parse(atob(accessToken.split('.')[1]));
+            document.getElementById('accessInfo').textContent =
+                `NEW token. Expires: ${new Date(payload.exp * 1000).toLocaleTimeString()}`;
+            document.getElementById('refreshInfo').textContent =
+                `NEW token. Expires: ${new Date(data.refreshTokenExpiry).toLocaleDateString()}`;
+        } else {
+            document.getElementById('accessStatus').textContent = 'Expired ❌';
+            document.getElementById('accessStatus').className = 'badge bg-danger';
+        }
+        setResponse({ httpStatus: res.status, ...data });
+    }
+
+    async function revokeToken() {
+        if (!refreshToken) { setResponse({ error: 'No refresh token to revoke.' }); return; }
+        setResponse('Calling POST /api/authapi/revoke ...');
+
+        const res = await fetch('/api/authapi/revoke', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${accessToken}`
+            },
+            body: JSON.stringify({ refreshToken })
+        });
+        const text = await res.text();
+        const data = text ? JSON.parse(text) : {};
+
+        if (res.ok) clearAll();
+        setResponse({ httpStatus: res.status, ...data });
+    }
+
+    function clearAll() {
+        accessToken = null; refreshToken = null;
+        document.getElementById('accessTokenBox').value = '';
+        document.getElementById('refreshTokenBox').value = '';
+        document.getElementById('accessStatus').textContent = 'None';
+        document.getElementById('accessStatus').className = 'badge bg-secondary';
+        document.getElementById('refreshStatus').textContent = 'None';
+        document.getElementById('refreshStatus').className = 'badge bg-secondary';
+        document.getElementById('accessInfo').textContent = '';
+        document.getElementById('refreshInfo').textContent = '';
     }
 
     function setResponse(data) {

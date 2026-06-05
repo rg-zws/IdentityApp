@@ -1,0 +1,136 @@
+@{
+    ViewData["Title"] = "Demo";
+    var message = ViewData["Message"] as string;
+    var claims = ViewData["Claims"] as IEnumerable<object>;
+    var users = ViewData["Users"] as List<IdentityApp.Models.ApplicationUser>;
+}
+
+<div class="row mb-4">
+    <div class="col">
+        <h3>@ViewData["Title"] — @ViewContext.RouteData.Values["action"]</h3>
+    </div>
+    <div class="col-auto">
+        <a asp-controller="Demo" asp-action="PublicPage" class="btn btn-outline-secondary btn-sm me-1">Public</a>
+        <a asp-controller="Demo" asp-action="MyClaims" class="btn btn-outline-primary btn-sm me-1">My Claims</a>
+        <a asp-controller="Demo" asp-action="EngineeringPage" class="btn btn-outline-success btn-sm me-1">Engineering</a>
+        <a asp-controller="Demo" asp-action="IndiaPage" class="btn btn-outline-info btn-sm me-1">India</a>
+        <a asp-controller="Demo" asp-action="AdminOnlyPage" class="btn btn-outline-danger btn-sm me-1">Admin</a>
+        <a asp-controller="Demo" asp-action="EngineeringOrAdminPage" class="btn btn-outline-warning btn-sm me-1">Eng|Admin</a>
+        <a asp-controller="Demo" asp-action="SecurityStampDemo" class="btn btn-dark btn-sm">Security Stamp</a>
+    </div>
+</div>
+
+@if (message != null)
+{
+    <div class="alert alert-success">
+        <strong>✅ Access Granted:</strong> @message
+    </div>
+}
+
+@* ── Claims Table ────────────────────────────────────────── *@
+@if (claims != null)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-primary text-white">
+            <strong>Your Claims (what's inside your login cookie)</strong>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr><th>Claim Type</th><th>Value</th></tr>
+                </thead>
+                <tbody>
+                    @foreach (var c in claims)
+                    {
+                        var type = c.GetType().GetProperty("Type")?.GetValue(c)?.ToString() ?? "";
+                        var value = c.GetType().GetProperty("Value")?.GetValue(c)?.ToString() ?? "";
+                        // Shorten the long Microsoft claim URIs for readability
+                        var shortType = type.Contains("/") ? type.Split('/').Last() : type;
+                        <tr>
+                            <td><code class="small">@shortType</code></td>
+                            <td><strong>@value</strong></td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light"><strong>Where these claims come from</strong></div>
+        <div class="card-body small">
+            <ol class="mb-0">
+                <li><strong>nameidentifier</strong> — user's ID from <code>AspNetUsers</code></li>
+                <li><strong>name</strong> — user's email (used as username)</li>
+                <li><strong>email</strong> — user's email</li>
+                <li><strong>role</strong> — from <code>AspNetUserRoles</code> table</li>
+                <li><strong>Department / Country</strong> — custom claims from <code>AspNetUserClaims</code> table</li>
+                <li><strong>AspNet.Identity.SecurityStamp</strong> — used to invalidate sessions</li>
+            </ol>
+        </div>
+    </div>
+}
+
+@* ── Security Stamp Demo ─────────────────────────────────── *@
+@if (users != null)
+{
+    <div class="card shadow-sm mb-4">
+        <div class="card-header bg-dark text-white">
+            <strong>All Users — Security Stamps</strong>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-sm table-hover mb-0">
+                <thead class="table-light">
+                    <tr>
+                        <th>Email</th>
+                        <th>Security Stamp</th>
+                        <th>Action</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @foreach (var u in users)
+                    {
+                        <tr>
+                            <td>@u.Email</td>
+                            <td><code class="small text-muted">@u.SecurityStamp</code></td>
+                            <td>
+                                <a asp-action="ResetSecurityStamp"
+                                   asp-route-userId="@u.Id"
+                                   class="btn btn-danger btn-sm"
+                                   onclick="return confirm('This will log out all sessions for this user. Continue?')">
+                                    Reset Stamp
+                                </a>
+                            </td>
+                        </tr>
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-light"><strong>How Security Stamp works</strong></div>
+        <div class="card-body small">
+            <div class="row">
+                <div class="col-md-6">
+                    <strong>When does the stamp change?</strong>
+                    <ul class="mt-1">
+                        <li>User changes password</li>
+                        <li>User changes email</li>
+                        <li>Admin changes user's role</li>
+                        <li>Admin manually resets it (above button)</li>
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <strong>What happens when it changes?</strong>
+                    <ul class="mt-1">
+                        <li>Cookie has old stamp</li>
+                        <li>DB has new stamp</li>
+                        <li>Mismatch → user logged out</li>
+                        <li>Checked every <strong>30 mins</strong> by default</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+}
