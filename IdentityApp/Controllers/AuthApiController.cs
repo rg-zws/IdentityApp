@@ -18,8 +18,7 @@ namespace IdentityApp.Controllers
         private readonly JwtService _jwtService;
         private readonly ApplicationDbContext _db;
 
-        public AuthApiController(
-            UserManager<ApplicationUser> userManager,
+        public AuthApiController(UserManager<ApplicationUser> userManager,
             SignInManager<ApplicationUser> signInManager,
             JwtService jwtService,
             ApplicationDbContext db)
