@@ -106,7 +106,7 @@ namespace IdentityApp.Controllers
 
             if (result.Succeeded)
             {
-                TempData["Success"] = "You have successfully logged in.";
+                TempData["Success"] = "Logged in. Congratulations!.";
                 if (!string.IsNullOrEmpty(returnUrl) && Url.IsLocalUrl(returnUrl))
                     return Redirect(returnUrl);
                 return RedirectToAction("Dashboard", "Home");
